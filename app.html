@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html {{HTML_ATTRS}}>
+  <head {{HEAD_ATTRS}}>
+    <!-- nuxt.config.js 中已经设置的信息  -->
+    {{HEAD}}
+    <!-- 也可以按需增加项目需要的个性内容 -->
+    <style>
+      * {
+        border: 0;
+        padding: 0;
+        margin: 0;
+      }
+      .load-wrap {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        left: 0;
+        top: 0;
+        z-index: 2023;
+        pointer-events: none;
+      }
+      .load-wrap.active {
+        pointer-events: all;
+      }
+
+      .load-line {
+        width: 100%;
+        flex: 1;
+        transform: translateX(100%);
+        background-color: black;
+        transition: transform 0.35s ease-in;
+      }
+
+      .load-wrap > .load-line {
+        transition-delay: calc(0.2s + var(--index) * 0.05s);
+      }
+
+      .load-wrap.active > .load-line {
+        transform: translateX(0);
+        transition-duration: 0.6s;
+        transition-timing-function: cubic-bezier(0.99, 0.49, 0.17, 1);
+      }
+
+      .load-text {
+        position: absolute;
+        padding: 1rem 2rem;
+        color: #fff;
+        --loading: 100%;
+      }
+
+      .load-text-box {
+        overflow: hidden;
+      }
+
+      .load-text-box > span {
+        display: block;
+        opacity: 0;
+        font-size: 48px;
+        font-family: Georgia, "Times New Roman", Times, serif;
+        transform-origin: bottom left;
+        transition: opacity 0s 1.5s;
+      }
+
+      .load-wrap .load-text-box > span {
+        animation: load-text-leave 0.6s forwards;
+      }
+
+      .load-wrap.active .load-text-box > span {
+        animation: load-text-enter 0.6s 0.75s forwards;
+      }
+
+      .load-text::after,
+      .load-text::before {
+        content: "";
+        position: absolute;
+        width: 0;
+        height: 3px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: auto;
+        transition: width 0.6s;
+      }
+
+      .load-wrap.active .load-text::after {
+        width: 100%;
+        transition: width 0.3s 0.9s;
+        background-color: #666;
+      }
+
+      .load-wrap.active .load-text::before {
+        width: var(--loading);
+        right: unset;
+        transition: width 0.3s;
+        background-color: aliceblue;
+        box-shadow: 0px 0px 10px 1px #ffffffb3;
+        border-radius: 0 5px 5px 0;
+        z-index: 2;
+      }
+
+      @keyframes load-text-enter {
+        0% {
+          opacity: 0.65;
+          transform: translateY(100%) rotate(25deg);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0) rotate(0);
+        }
+      }
+
+      @keyframes load-text-leave {
+        0% {
+          opacity: 1;
+          transform: translateY(0) rotate(0);
+        }
+        100% {
+          opacity: 0.65;
+          transform: translateY(100%);
+        }
+      }
+    </style>
+  </head>
+  <body {{BODY_ATTRS}}>
+    <div class="load-wrap">
+      <div class="load-line" style="--index: 1"></div>
+      <div class="load-line" style="--index: 2"></div>
+      <div class="load-line" style="--index: 3"></div>
+      <div class="load-line" style="--index: 4"></div>
+      <div class="load-line" style="--index: 5"></div>
+      <div class="load-text" style="--loading: 0">
+        <div class="load-text-box">
+          <span>LOADING</span>
+        </div>
+      </div>
+    </div>
+    <script>
+      const loadingPage = (() => {
+        const loadDom = document.querySelector(".load-wrap");
+        const loadText = document.querySelector(".load-text");
+        const timestamp = Date.now();
+        let timer = null;
+
+        const openTimeout = (() => {
+          let timeout = null;
+          return function (callback) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+              callback();
+              clearTimeout(timeout);
+            }, 900);
+          };
+        })();
+        return function (isOpen = true, callback = null) {
+          if (isOpen) {
+            let loadingProgress = 0;
+            loadDom.classList.add("active");
+            openTimeout(() => {
+              timer = setInterval(() => {
+                loadText.style.setProperty(
+                  "--loading",
+                  loadingProgress++ + "%"
+                );
+                if (loadingProgress >= 100) clearInterval(timer);
+              }, 100);
+            });
+          } else {
+            const diffTime = Date.now() - timestamp;
+            setTimeout(() => {
+              clearInterval(timer);
+              loadText.style.setProperty("--loading", "100%");
+              setTimeout(() => {
+                loadDom.classList.remove("active");
+                callback && callback();
+                openTimeout(() => {
+                  loadText.style.setProperty("--loading", "0%");
+                });
+              }, 450);
+            }, 2000 - diffTime);
+          }
+        };
+      })();
+      setTimeout(loadingPage, 30);
+    </script>
+    {{APP}}
+  </body>
+</html>
